@@ -47,3 +47,4 @@ int Card::getCardsCreated() { return cardsCreated; }
 std::ostream& operator<<(std::ostream& os, const Card& c) {
     return os << c.toString();
 }
+

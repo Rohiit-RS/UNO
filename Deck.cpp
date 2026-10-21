@@ -55,3 +55,4 @@ Card Deck::startCard() {
 void Deck::discard(const Card& c) { discardPile.push_back(c); }
 
 const Card& Deck::top() const { return discardPile[discardPile.size() - 1]; }
+

@@ -42,3 +42,4 @@ public:
     friend std::istream& operator>>(std::istream& is, Player& p);   // reads the name
     friend class Game;
 };
+

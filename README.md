@@ -100,3 +100,4 @@ g++ -std=c++14 -O2 -o test_runner Card.cpp Deck.cpp Player.cpp Game.cpp test_run
 - **`Deck`**: Exact 108-card distribution, draw depletion, automatic reshuffle of discard pile preserving the top card, and rejection of Wild Draw Four as starting card.
 - **`Player & Rules`**: Wild Draw Four legality enforcement (disallowed if player holds active color), hand sorting via insertion sort, cascading method calls.
 - **`Game`**: Rule of Three verification (deep copy, assignment, destructor).
+

@@ -35,3 +35,4 @@ exit /b 1
 :done
 echo Build finished successfully!
 echo Run 'uno.exe' to play, or 'test_runner.exe' to run tests.
+

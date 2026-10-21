@@ -57,3 +57,4 @@ std::ostream& operator<<(std::ostream& os, const Player& p) {
 std::istream& operator>>(std::istream& is, Player& p) {
     return is >> p.name;
 }
+

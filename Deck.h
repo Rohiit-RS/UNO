@@ -17,3 +17,4 @@ public:
     const Card& top() const;
     int drawSize() const { return drawPile.size(); }
 };
+

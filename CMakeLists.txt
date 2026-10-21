@@ -28,3 +28,4 @@ add_executable(uno_tests test_runner.cpp ${SOURCES} ${HEADERS})
 
 enable_testing()
 add_test(NAME uno_tests COMMAND uno_tests)
+
