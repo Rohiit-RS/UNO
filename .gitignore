@@ -1,0 +1,19 @@
+# Build artifacts
+*.obj
+*.exe
+*.pdb
+*.ilk
+*.idb
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Directories
+build/
+bin/
+out/
+.vscode/
+.vs/
+.idea/
+.cache/
