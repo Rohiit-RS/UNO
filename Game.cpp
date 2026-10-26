@@ -55,18 +55,7 @@ void Game::say(const std::string& msg) {
 
 void Game::clearScreen() const {
     std::cout << std::flush;
-    if (CLEAR_MODE == 0) {
-#ifdef _WIN32
-        std::system("cls");
-#else
-        std::cout << "\033[3J" << std::flush;
-        if (std::system("clear") != 0) {}
-#endif
-    } else if (CLEAR_MODE == 2) {
-        std::cout << "\033[2J\033[3J\033[H" << std::flush;
-    } else {
-        for (int i = 0; i < 100; ++i) std::cout << "\n";
-    }
+    for (int i = 0; i < 100; ++i) std::cout << "\n";
 }
 
 void Game::drawCards(int idx, int n) {
