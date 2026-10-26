@@ -1,26 +1,19 @@
 #pragma once
 #include <iostream>
 #include <string>
-#include <random>
 #include <cstdlib>
+#include <vector>
+#include <utility>
 
+// ===== Utils.h =====
 // How to hide the previous player's hand:
-//   0 = system command (cls / clear)            -> real Command Prompt / Terminal
-//   1 = print 100 blank lines                   -> works everywhere (default, fine for CLion)
-//   2 = ANSI escape codes that wipe the screen  -> CLion with "Emulate terminal in output
-//                                                  console" ticked, or CLion's Terminal tab
+//   0 = system command (cls / clear)
+//   1 = print 100 blank lines (default, fine for CLion)
+//   2 = ANSI escape codes that wipe the screen
 const int CLEAR_MODE = 1;
 
-inline std::mt19937& rng() {
-    static std::mt19937 gen(std::random_device{}());
-    return gen;
-}
-
-// random integer in [0, n-1]
-inline int randInt(int n) { return std::uniform_int_distribution<int>(0, n - 1)(rng()); }
-
-inline void exitOnEOF() {
-    if (std::cin.eof()) { std::cout << "\nInput closed. Exiting.\n"; std::exit(0); }
+inline int randInt(int n) {
+    return std::rand() % n;
 }
 
 inline int readInt(const std::string& prompt, int lo, int hi) {
@@ -31,7 +24,6 @@ inline int readInt(const std::string& prompt, int lo, int hi) {
             std::cin.ignore(10000, '\n');
             if (v >= lo && v <= hi) return v;
         } else {
-            exitOnEOF();
             std::cin.clear();
             std::cin.ignore(10000, '\n');
         }
@@ -48,9 +40,24 @@ inline bool readYesNo(const std::string& prompt) {
             if (s[0] == 'y' || s[0] == 'Y') return true;
             if (s[0] == 'n' || s[0] == 'N') return false;
         } else {
-            exitOnEOF();
             std::cin.clear();
         }
         std::cout << "  Please answer y or n.\n";
+    }
+}
+
+// ===== Function templates =====
+template <typename T>
+void swapValues(T& a, T& b) {
+    T tmp = a;
+    a = b;
+    b = tmp;
+}
+
+template <typename T>
+void shuffleArray(std::vector<T>& arr) {
+    for (std::size_t i = arr.size(); i > 1; --i) {
+        std::size_t j = std::rand() % i;
+        std::swap(arr[i - 1], arr[j]);
     }
 }

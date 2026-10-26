@@ -3,18 +3,29 @@
 #include <iostream>
 #include <cstdlib>
 
-int Game::roundsPlayed = 0;
+int Game::gamesPlayed = 0;
 
-// ---------- Rule of Three ----------
-Game::Game(int target)
-    : deck(new Deck()), current(0), dir(1), dealer(0), targetScore(target), activeColor(RED) {}
+Game::Game() {
+    deck = new Deck();
+    current = 0;
+    dir = 1;
+    dealer = 0;
+    activeColor = 'R';
+}
 
-Game::Game(const Game& o)
-    : players(o.players), deck(new Deck(*o.deck)), current(o.current), dir(o.dir),
-      dealer(o.dealer), targetScore(o.targetScore), activeColor(o.activeColor),
-      events(o.events) {}
+Game::Game(const Game& o) {
+    players = o.players;
+    deck = new Deck(*o.deck);
+    current = o.current;
+    dir = o.dir;
+    dealer = o.dealer;
+    activeColor = o.activeColor;
+    events = o.events;
+}
 
-Game::~Game() { delete deck; }
+Game::~Game() { 
+    delete deck; 
+}
 
 Game& Game::operator=(const Game& o) {
     if (this != &o) {
@@ -22,8 +33,10 @@ Game& Game::operator=(const Game& o) {
         delete deck;
         deck = nd;
         players = o.players;
-        current = o.current; dir = o.dir; dealer = o.dealer;
-        targetScore = o.targetScore; activeColor = o.activeColor;
+        current = o.current; 
+        dir = o.dir; 
+        dealer = o.dealer;
+        activeColor = o.activeColor;
         events = o.events;
     }
     return *this;
@@ -31,7 +44,7 @@ Game& Game::operator=(const Game& o) {
 
 // ---------- helpers ----------
 int Game::nextIndex(int from, int steps) const {
-    int n = players.size();
+    int n = static_cast<int>(players.size());
     return (((from + dir * steps) % n) + n) % n;
 }
 
@@ -46,7 +59,7 @@ void Game::clearScreen() const {
 #ifdef _WIN32
         std::system("cls");
 #else
-        std::cout << "\033[3J" << std::flush;     // also wipe the scroll-back
+        std::cout << "\033[3J" << std::flush;
         if (std::system("clear") != 0) {}
 #endif
     } else if (CLEAR_MODE == 2) {
@@ -60,7 +73,10 @@ void Game::drawCards(int idx, int n) {
     int got = 0;
     for (int i = 0; i < n; ++i) {
         Card c;
-        if (deck->draw(c)) { players[idx].addCard(c); ++got; }
+        if (deck->draw(c)) { 
+            players[idx].addCard(c); 
+            ++got; 
+        }
     }
     say("  " + players[idx].getName() + " draws " + std::to_string(got) + " card(s).\n");
 }
@@ -70,7 +86,7 @@ void Game::showTable() const {
               << Card::colorName(activeColor) << "   |   Direction: "
               << (dir == 1 ? "clockwise" : "counter-clockwise") << "\n";
     std::cout << "Cards in hand: ";
-    for (int i = 0; i < players.size(); ++i)
+    for (int i = 0; i < static_cast<int>(players.size()); ++i)
         std::cout << (i == current ? "[" : "") << players[i].getName() << ":"
                   << players[i].handSize() << (i == current ? "]" : "") << "  ";
     std::cout << "\n";
@@ -82,9 +98,9 @@ void Game::setup() {
     for (int i = 0; i < n; ++i) {
         Player p;
         std::cout << "Name of player " << (i + 1) << " (no spaces): ";
-        if (!(std::cin >> p)) exitOnEOF();
+        std::cin >> p;
         std::cin.ignore(10000, '\n');
-        players += p;                                   // operator+= on DynArray
+        players.push_back(p);
     }
 }
 
@@ -97,54 +113,29 @@ int Game::chooseCard(const Player& p) const {
         int v = readInt("Enter card number to play (0 = draw a card): ", 0, p.handSize());
         if (v == 0) return -1;
         if (p.canPlay(v - 1, top, activeColor)) return v - 1;
-        if (p.cardAt(v - 1).getValue() == WILD_DRAW_FOUR)
-            std::cout << "  Illegal: Wild Draw Four only if you have no "
-                      << Card::colorName(activeColor) << " card.\n";
-        else
-            std::cout << "  That card doesn't match the top card. Try again.\n";
+        std::cout << "  That card doesn't match the top card. Try again.\n";
     }
 }
 
 Color Game::chooseColor(const Player& p) const {
     int v = readInt(p.getName() + ", choose colour: 1) Red  2) Yellow  3) Green  4) Blue : ", 1, 4);
-    return static_cast<Color>(v - 1);
+    return "RYGB"[v - 1];
 }
 
 // ---------- card effects ----------
 int Game::applyCard(int idx, const Card& c, Color prevActive) {
     deck->discard(c);
     if (!c.isWild()) activeColor = c.getColor();
-    int n = players.size();
+    int n = static_cast<int>(players.size());
     int skips = 0;
 
-    switch (c.getValue()) {
-    case SKIP:
-        say("  " + players[nextIndex(idx)].getName() + " is skipped!\n");
-        skips = 1;
-        break;
-    case REVERSE:
-        if (n == 2) { say("  Reverse (acts as Skip with 2 players)!\n"); skips = 1; }
-        else { dir = -dir; say("  Direction reversed!\n"); }
-        break;
-    case DRAW_TWO: {
-        int t = nextIndex(idx);
-        drawCards(t, 2);
-        say("  " + players[t].getName() + " loses their turn.\n");
-        skips = 1;
-        break;
-    }
-    case WILD:
-        activeColor = chooseColor(players[idx]);
-        say("  " + players[idx].getName() + " chooses " + Card::colorName(activeColor) + ".\n");
-        break;
-    case WILD_DRAW_FOUR: {
+    if (c.isWildDrawFour()) {
         activeColor = chooseColor(players[idx]);
         say("  " + players[idx].getName() + " chooses " + Card::colorName(activeColor) + ".\n");
         int t = nextIndex(idx);
-        // hide the player's hand and hand the device to the targeted player
         clearScreen();
         std::cout << "Pass the device to " << players[t].getName() << " and press Enter when ready...";
-        if (std::cin.get() == EOF) exitOnEOF();
+        std::cin.get();
         std::cout << "\n" << players[idx].getName() << " played Wild Draw Four and chose "
                   << Card::colorName(activeColor) << ".\n"
                   << "Cards in " << players[idx].getName() << "'s hand: " << players[idx].handSize() << "\n";
@@ -159,38 +150,39 @@ int Game::applyCard(int idx, const Card& c, Color prevActive) {
             players[idx].showHand();
             if (players[idx].hasColor(prevActive)) {
                 say("  Illegal play! " + players[idx].getName() + " draws 4 instead.\n");
-                drawCards(idx, 4);              // challenger takes their turn normally
+                drawCards(idx, 4);
             } else {
                 say("  Legal play - challenge fails. " + players[t].getName() + " draws 6.\n");
                 drawCards(t, 6);
                 skips = 1;
             }
         }
-        break;
-    }
-    default:
-        break;
+    } else if (c.isWild()) {
+        activeColor = chooseColor(players[idx]);
+        say("  " + players[idx].getName() + " chooses " + Card::colorName(activeColor) + ".\n");
+    } else if (c.getValue() == 'S') {
+        say("  " + players[nextIndex(idx)].getName() + " is skipped!\n");
+        skips = 1;
+    } else if (c.getValue() == 'R') {
+        if (n == 2) { 
+            say("  Reverse (acts as Skip with 2 players)!\n"); 
+            skips = 1; 
+        } else { 
+            dir = -dir; 
+            say("  Direction reversed!\n"); 
+        }
+    } else if (c.getValue() == 'D') {
+        int t = nextIndex(idx);
+        drawCards(t, 2);
+        say("  " + players[t].getName() + " loses their turn.\n");
+        skips = 1;
     }
     return skips;
 }
 
 // ---------- UNO shout ----------
 void Game::unoPhase(int idx) {
-    Player& p = players[idx];
-    if (readYesNo("Table check: " + p.getName() + " has 1 card left. Did " + p.getName() + " say UNO in time? (y/n): ")) {
-        say("  " + p.getName() + " shouts \"UNO!\"\n");
-        return;
-    }
-    std::cout << "  " << p.getName() << " forgot to say UNO. Did anyone catch them before the next turn?\n";
-    for (int i = 0; i < players.size(); ++i)
-        if (i != idx) std::cout << "    " << (i + 1) << ") " << players[i].getName() << "\n";
-    int who = readInt("  Enter the catcher's number (0 = nobody noticed): ", 0, players.size());
-    if (who == 0 || who - 1 == idx) {
-        say("  (Nobody noticed " + p.getName() + " forgot to say UNO.)\n");
-        return;
-    }
-    say("  " + players[who - 1].getName() + " caught " + p.getName() + "! Penalty: 2 cards.\n");
-    drawCards(idx, 2);
+    say("  *** " + players[idx].getName() + ": UNO! (only 1 card left) ***\n");
 }
 
 // ---------- one turn ----------
@@ -199,10 +191,9 @@ int Game::takeTurn() {
     Color prev = activeColor;
     Card top = deck->top();
 
-    // hide the previous player's hand, then hand over the device
     clearScreen();
     std::cout << "Pass the device to " << p.getName() << " and press Enter when ready...";
-    if (std::cin.get() == EOF) exitOnEOF();
+    std::cin.get();
     std::cout << "\n=== " << p.getName() << "'s turn ===\n";
     if (!events.empty()) std::cout << "Since your last turn:\n" << events;
     events.clear();
@@ -220,7 +211,7 @@ int Game::takeTurn() {
         Card drawn;
         if (deck->draw(drawn)) {
             p.addCard(drawn);
-            int idx = p.handSize() - 1;                     // the card just drawn
+            int idx = p.handSize() - 1;
             std::cout << "You drew: " << drawn << "\n";
             if (p.canPlay(idx, top, prev) &&
                 readYesNo("Play it now? (y/n): ")) {
@@ -237,11 +228,11 @@ int Game::takeTurn() {
     if (didPlay) {
         say(p.getName() + " plays " + played.toString() + ".\n");
         skips = applyCard(current, played, prev);
-        if (p.handSize() == 0) return current;              // round over (penalties already applied)
+        if (p.handSize() == 0) return current;
         if (p.handSize() == 1) unoPhase(current);
     }
     std::cout << "\nPress Enter to hide the screen...";
-    if (std::cin.get() == EOF) exitOnEOF();
+    std::cin.get();
     current = nextIndex(current, 1 + skips);
     return -1;
 }
@@ -251,48 +242,43 @@ void Game::handleStartCard(const Card& start) {
     int left = nextIndex(dealer);
     activeColor = start.getColor();
     say("Starting card: " + start.toString() + "\n");
-    switch (start.getValue()) {
-    case DRAW_TWO:
-        say("  " + players[left].getName() + " draws 2 and forfeits the first turn.\n");
-        drawCards(left, 2);
-        current = nextIndex(left);
-        break;
-    case REVERSE:
-        dir = -1;
-        current = dealer;
-        say("  Direction is counter-clockwise; dealer " + players[dealer].getName() + " starts.\n");
-        break;
-    case SKIP:
-        say("  " + players[left].getName() + " is skipped.\n");
-        current = nextIndex(dealer, 2);
-        break;
-    case WILD:
+    if (start.isWild()) {
         activeColor = chooseColor(players[left]);
         say("  " + players[left].getName() + " declares " + Card::colorName(activeColor) + ".\n");
         current = left;
-        break;
-    default:
+    } else if (start.getValue() == 'D') {
+        say("  " + players[left].getName() + " draws 2 and forfeits the first turn.\n");
+        drawCards(left, 2);
+        current = nextIndex(left);
+    } else if (start.getValue() == 'R') {
+        dir = -1;
+        current = dealer;
+        say("  Direction is counter-clockwise; dealer " + players[dealer].getName() + " starts.\n");
+    } else if (start.getValue() == 'S') {
+        say("  " + players[left].getName() + " is skipped.\n");
+        current = nextIndex(dealer, 2);
+    } else {
         current = left;
     }
 }
 
 // ---------- round / game ----------
-void Game::endRound(int winner) {
-    int total = 0;
-    for (int i = 0; i < players.size(); ++i)
-        if (i != winner) total += players[i].handPoints();
-    players[winner].addScore(total);
-    ++roundsPlayed;
-    std::cout << "\n=== " << players[winner].getName() << " wins the round and scores "
-              << total << " points! ===\nScoreboard:\n";
-    for (int i = 0; i < players.size(); ++i) std::cout << "  " << players[i] << "\n";
+void Game::endGame(int winner) {
+    ++gamesPlayed;
+    std::cout << "\n==============================================\n"
+              << "  " << players[winner].getName()
+              << " played their last card and WINS THE GAME!\n"
+              << "==============================================\n"
+              << "Cards left in the other hands:\n";
+    for (int i = 0; i < static_cast<int>(players.size()); ++i)
+        if (i != winner) std::cout << "  " << players[i] << "\n";
 }
 
-void Game::playRound() {
+void Game::playGame() {
     deck->reset();
-    int n = players.size();
+    int n = static_cast<int>(players.size());
     for (int i = 0; i < n; ++i) players[i].clearHand();
-    dealer = roundsPlayed % n;
+    dealer = gamesPlayed % n;
     dir = 1;
     events.clear();
 
@@ -303,32 +289,19 @@ void Game::playRound() {
             players[nextIndex(dealer, i + 1)] += c;
         }
 
-    std::cout << "\n############ ROUND " << (roundsPlayed + 1) << " (dealer: "
+    std::cout << "\n############ NEW GAME (dealer: "
               << players[dealer].getName() << ") ############\n";
     handleStartCard(deck->startCard());
 
     int winner = -1;
     while (winner < 0) winner = takeTurn();
-    endRound(winner);
+    endGame(winner);
 }
 
 void Game::run() {
     setup();
-    while (true) {
-        playRound();
-        int best = 0;
-        for (int i = 1; i < players.size(); ++i)
-            if (players[i] > players[best]) best = i;
-        if (players[best].getScore() >= targetScore) {
-            std::cout << "\n*** " << players[best].getName() << " reaches "
-                      << players[best].getScore() << " points and WINS THE GAME after "
-                      << roundsPlayed << " round(s)! ***\n";
-            break;
-        }
-        std::cout << "\n(First to " << targetScore << " points wins.)\n";
-        std::cout << "Press Enter to start the next round...";
-        if (std::cin.get() == EOF) exitOnEOF();
-    }
-    std::cout << "Total Card objects constructed: " << Card::getCardsCreated() << "\n";
+    do {
+        playGame();
+    } while (readYesNo("\nShuffle the whole deck and start a brand-new match? (y/n): "));
+    std::cout << "Thanks for playing! Games played: " << gamesPlayed << "\n";
 }
-

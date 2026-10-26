@@ -1,45 +1,39 @@
 #pragma once
 #include <string>
+#include <vector>
 #include <iostream>
 #include "Card.h"
-#include "DynArray.h"
 
 class Game;
 
 class Player {
 private:
     std::string name;
-    int score;
-    DynArray<Card> hand;
+    std::vector<Card> hand;
 
 public:
     Player();
     explicit Player(const std::string& n);
 
     const std::string& getName() const { return name; }
-    int  getScore() const { return score; }
-    int  handSize() const { return hand.size(); }
+    int  handSize() const { return static_cast<int>(hand.size()); }
     const Card& cardAt(int i) const { return hand[i]; }
 
-    // Method cascading: these return *this by reference
     Player& addCard(const Card& c);
     Player& sortHand();
     Player& clearHand();
-    Player& addScore(int pts);
 
-    Card playCard(int i);                           // removes and returns card i
+    Card playCard(int i);
     bool hasColor(Color c) const;
-    bool canPlay(int i, const Card& top, Color active) const;   // includes Wild Draw Four rule
+    bool canPlay(int i, const Card& top, Color active) const;
     bool hasPlayable(const Card& top, Color active) const;
-    int  handPoints() const;
-    void showHand(const Card* top = nullptr, Color active = WILD_COLOR) const;
+    void showHand(const Card* top = 0, Color active = 'W') const;
 
     Player& operator+=(const Card& c) { return addCard(c); }
-    bool operator<(const Player& o) const { return score < o.score; }
-    bool operator>(const Player& o) const { return score > o.score; }
+    bool operator<(const Player& o) const { return hand.size() < o.hand.size(); }
+    bool operator>(const Player& o) const { return hand.size() > o.hand.size(); }
 
     friend std::ostream& operator<<(std::ostream& os, const Player& p);
-    friend std::istream& operator>>(std::istream& is, Player& p);   // reads the name
+    friend std::istream& operator>>(std::istream& is, Player& p);
     friend class Game;
 };
-

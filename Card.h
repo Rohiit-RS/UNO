@@ -2,37 +2,37 @@
 #include <string>
 #include <iostream>
 
-enum Color { RED, YELLOW, GREEN, BLUE, WILD_COLOR };
-enum Value { ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE,
-             SKIP, REVERSE, DRAW_TWO, WILD, WILD_DRAW_FOUR };
+typedef char Color;   // 'R','Y','G','B','W'
+typedef char Value;   // '0'-'9','S','R','D','W','4'
 
 class Card {
 private:
     Color color;
     Value value;
-    static int cardsCreated;          // static data member
+    static int cardsCreated;
+
+    static int colorIndex(Color c);
+    static int valueRank(const Card& c);
 
 public:
     Card();
     Card(Color c, Value v);
 
-    // inline accessors (const member functions)
     Color getColor() const { return color; }
     Value getValue() const { return value; }
 
     bool isWild() const;
+    bool isWildDrawFour() const;
     bool isNumber() const;
     bool isAction() const;
-    int  points() const;
     bool matches(const Card& top, Color activeColor) const;
     std::string toString() const;
 
     bool operator==(const Card& o) const;
-    bool operator<(const Card& o) const;      // used for sorting a hand
+    bool operator<(const Card& o) const;
 
     static const char* colorName(Color c);
-    static int getCardsCreated();             // static member function
+    static int getCardsCreated();
 
     friend std::ostream& operator<<(std::ostream& os, const Card& c);
 };
-
